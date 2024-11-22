@@ -2,13 +2,21 @@ import streamlit as st
 import requests
 from datetime import datetime
 import os
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # Skip if dotenv is not installed
 
-# Load environment variables
-load_dotenv()
+# Get API key from environment variable or Streamlit secrets
+def get_api_key():
+    # First try to get from streamlit secrets
+    if 'OPENWEATHER_API_KEY' in st.secrets:
+        return st.secrets['OPENWEATHER_API_KEY']
+    # Then try environment variable
+    return os.getenv('OPENWEATHER_API_KEY')
 
-# Get API key from environment variable
-API_KEY = os.getenv('OPENWEATHER_API_KEY')
+API_KEY = get_api_key()
 BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
 
 def kelvin_to_celsius(kelvin):
@@ -18,6 +26,10 @@ def kelvin_to_fahrenheit(kelvin):
     return (kelvin - 273.15) * 9/5 + 32
 
 def get_weather_data(city):
+    if not API_KEY:
+        st.error("API key not found. Please configure the OPENWEATHER_API_KEY in your environment.")
+        return None
+        
     params = {
         'q': city,
         'appid': API_KEY,
